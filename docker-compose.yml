@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=restaurant
+    volumes:
+      - local-postgres-data:/var/lib/postgresql/data
+  app:
+    build: .
+    pull_policy: always
+    environment:
+      - POSTGRES_URI=postgresql://postgres:postgres@postgres:5432/restaurant
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
+
+volumes:
+  local-postgres-data:

@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "restaurant-fastapi"
+version = "0.1.0"
+description = ""
+authors = ["Deverty <bychenkov.a.k@edu.mirea.ru>"]
+readme = "README.md"
+packages = [{include = "restaurant_fastapi"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.100.0"
+uvicorn = "^0.23.1"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
