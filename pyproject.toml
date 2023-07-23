@@ -10,6 +10,8 @@ packages = [{include = "restaurant_fastapi"}]
 python = "^3.11"
 fastapi = "^0.100.0"
 uvicorn = "^0.23.1"
+pydantic-settings = "^2.0.2"
+sqlalchemy = "^2.0.19"
 
 
 [tool.poetry.group.dev.dependencies]

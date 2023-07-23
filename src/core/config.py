@@ -1,9 +1,18 @@
 from typing import List
-from pydantic import BaseSettings
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    CORS_ALLOW_ORIGINS: List[str] = ["http://localhost"]
+    app_title: str = "restaurant-fastapi"
+    postgres_uri: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/restaurant"
+    )
+    cors_allow_origins: List[str] = ["http://localhost"]
+    
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8"
+    )
 
 
 settings = Settings()
