@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 
 
-@router.get("/", response_model=list[MenuDTO])
+@router.get("", response_model=list[MenuDTO])
 async def get_all(session: AsyncSession = Depends(get_session)):
     return [
         MenuDTO.model_validate(
