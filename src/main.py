@@ -20,9 +20,4 @@ async def init_tables():
     await init_db()
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
 app.include_router(api_router, prefix="/api")
