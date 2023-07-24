@@ -13,13 +13,13 @@ services:
   app:
     build: .
     pull_policy: always
-    restart: always
     environment:
       - POSTGRES_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/restaurant
     ports:
       - 8000:8000
     depends_on:
       - postgres
+    command: ["./scripts/wait-for-it.sh", "postgres:5432", "--", "./start.sh"]
 
 volumes:
   local-postgres-data:
