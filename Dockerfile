@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=requirements-stage /tmp/requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 COPY src .en[v] .
-CMD ["./start.sh"]
+CMD ["/bin/sh", "./start.sh"]
