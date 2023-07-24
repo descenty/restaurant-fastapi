@@ -14,7 +14,7 @@ router = APIRouter()
 )
 async def get_all(
     menu_id: UUID,
-    submenu_id: str,
+    submenu_id: UUID,
     session: AsyncSession = Depends(get_session),
 ):
     return [
