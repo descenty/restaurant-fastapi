@@ -7,3 +7,5 @@ docker compose up
 Also you can test it on:
 
 [descenty.ru:8000](http://descenty.ru:8000)
+
+[descenty.ru:8000/docs](http://descenty.ru:8000/docs)
