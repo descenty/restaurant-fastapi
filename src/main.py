@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from .api.router import api_router
-from .core.config import settings
+from api.router import api_router
+from core.config import settings
+from db.init_db import init_db
 
 app = FastAPI(title=settings.app_title)
 
@@ -14,9 +15,14 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def init_tables():
+    await init_db()
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api")
