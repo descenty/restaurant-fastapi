@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +10,7 @@ router = APIRouter()
 
 
 @router.get("/{menu_id}/submenus", response_model=list[SubmenuDTO])
-async def get_all(menu_id: str, session: AsyncSession = Depends(get_session)):
+async def get_all(menu_id: UUID, session: AsyncSession = Depends(get_session)):
     return [
         SubmenuDTO.model_validate(
             menu.__dict__ | {"dishes_count": dishes_count}
@@ -29,7 +30,7 @@ async def get_all(menu_id: str, session: AsyncSession = Depends(get_session)):
 
 @router.get("/{menu_id}/submenus/{id}", response_model=SubmenuDTO)
 async def get(
-    menu_id: str, id: str, session: AsyncSession = Depends(get_session)
+    menu_id: UUID, id: UUID, session: AsyncSession = Depends(get_session)
 ):
     if row := (
         await session.execute(
@@ -48,7 +49,7 @@ async def get(
 
 @router.post("/{menu_id}/submenus", response_model=SubmenuDTO, status_code=201)
 async def create(
-    menu_id: str,
+    menu_id: UUID,
     submenu_create: SubmenuCreate,
     session: AsyncSession = Depends(get_session),
 ):
@@ -69,8 +70,8 @@ async def create(
 
 @router.patch("/{menu_id}/submenus/{id}", response_model=SubmenuDTO)
 async def update(
-    menu_id: str,
-    id: str,
+    menu_id: UUID,
+    id: UUID,
     submenu_create: SubmenuCreate,
     session: AsyncSession = Depends(get_session),
 ):
@@ -98,7 +99,7 @@ async def update(
 
 @router.delete("/{menu_id}/submenus/{id}", response_model=SubmenuDTO)
 async def delete(
-    menu_id: str, id: str, session: AsyncSession = Depends(get_session)
+    menu_id: UUID, id: UUID, session: AsyncSession = Depends(get_session)
 ):
     if row := (
         await session.execute(

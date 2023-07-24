@@ -5,6 +5,7 @@ from db.session import get_session
 from models import Menu, Submenu, Dish
 from schemas.menu import MenuDTO, MenuCreate
 import logging
+from uuid import UUID
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,7 +39,7 @@ async def get_all(session: AsyncSession = Depends(get_session)):
 
 
 @router.get("/{id}", response_model=MenuDTO)
-async def get(id: str, session: AsyncSession = Depends(get_session)):
+async def get(id: UUID, session: AsyncSession = Depends(get_session)):
     if row := (
         (
             await session.execute(
@@ -69,7 +70,7 @@ async def get(id: str, session: AsyncSession = Depends(get_session)):
     raise HTTPException(status_code=404, detail="menu not found")
 
 
-@router.post("/", response_model=MenuDTO, status_code=201)
+@router.post("", response_model=MenuDTO, status_code=201)
 async def create(
     menu_create: MenuCreate, session: AsyncSession = Depends(get_session)
 ):
@@ -82,7 +83,7 @@ async def create(
 
 @router.patch("/{id}", response_model=MenuDTO)
 async def update(
-    id: str,
+    id: UUID,
     menu_create: MenuCreate,
     session: AsyncSession = Depends(get_session),
 ):
@@ -112,7 +113,7 @@ async def update(
 
 
 @router.delete("/{id}", response_model=MenuDTO)
-async def delete(id: str, session: AsyncSession = Depends(get_session)):
+async def delete(id: UUID, session: AsyncSession = Depends(get_session)):
     if row := (
         await session.execute(
             select(

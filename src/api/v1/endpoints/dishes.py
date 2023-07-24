@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db.session import get_session
 from models import Dish, Submenu
 from schemas.dish import DishDTO, DishCreate
+from uuid import UUID
 
 router = APIRouter()
 
@@ -12,7 +13,9 @@ router = APIRouter()
     "/{menu_id}/submenus/{submenu_id}/dishes", response_model=list[DishDTO]
 )
 async def get_all(
-    menu_id: str, submenu_id: str, session: AsyncSession = Depends(get_session)
+    menu_id: UUID,
+    submenu_id: str,
+    session: AsyncSession = Depends(get_session),
 ):
     return [
         DishDTO.model_validate(dish, from_attributes=True)
@@ -30,9 +33,9 @@ async def get_all(
     "/{menu_id}/submenus/{submenu_id}/dishes/{id}", response_model=DishDTO
 )
 async def get(
-    menu_id: str,
-    submenu_id: str,
-    id: str,
+    menu_id: UUID,
+    submenu_id: UUID,
+    id: UUID,
     session: AsyncSession = Depends(get_session),
 ):
     if dish := (
@@ -56,8 +59,8 @@ async def get(
     status_code=201,
 )
 async def create(
-    menu_id: str,
-    submenu_id: str,
+    menu_id: UUID,
+    submenu_id: UUID,
     dish_create: DishCreate,
     session: AsyncSession = Depends(get_session),
 ):
@@ -80,9 +83,9 @@ async def create(
     "/{menu_id}/submenus/{submenu_id}/dishes/{id}", response_model=DishDTO
 )
 async def update(
-    menu_id: str,
-    submenu_id: str,
-    id: str,
+    menu_id: UUID,
+    submenu_id: UUID,
+    id: UUID,
     dish_create: DishCreate,
     session: AsyncSession = Depends(get_session),
 ):
@@ -109,9 +112,9 @@ async def update(
     "/{menu_id}/submenus/{submenu_id}/dishes/{id}", response_model=DishDTO
 )
 async def delete(
-    menu_id: str,
-    submenu_id: str,
-    id: str,
+    menu_id: UUID,
+    submenu_id: UUID,
+    id: UUID,
     session: AsyncSession = Depends(get_session),
 ):
     if dish := (
