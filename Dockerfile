@@ -11,5 +11,4 @@ WORKDIR /app
 COPY --from=requirements-stage /tmp/requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 COPY src .en[v] .
-RUN chmod 755 ./start.sh
 CMD ["./start.sh"]
