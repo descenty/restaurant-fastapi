@@ -22,7 +22,9 @@ class CRUDRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    def update(obj: BaseModel, session: DBSession) -> BaseModel | None:
+    def update(
+        idd: UUID, obj: BaseModel, session: DBSession
+    ) -> BaseModel | None:
         ...
 
     @staticmethod

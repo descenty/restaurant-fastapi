@@ -10,6 +10,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     try:
         yield async_session
     finally:
+        await async_session.commit()
         await async_session.close()
 
 
