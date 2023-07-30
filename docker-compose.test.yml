@@ -1,6 +1,6 @@
 services:
   postgres:
-    container_name: restaurant-postgres
+    container_name: restaurant-test-postgres
     image: postgres:latest
     restart: always
     ports:
@@ -9,12 +9,10 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=restaurant
-    volumes:
-      - restaurant-postgres-data:/var/lib/postgresql/data
   app:
-    container_name: restaurant-app
+    container_name: restaurant-test-app
     build: .
-    command: bash -c "while !</dev/tcp/testpostgres/5432; do sleep 1; done; ./start.sh"
+    command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; ./test.sh"
     environment:
       - POSTGRES_URI=postgresql://postgres:postgres@postgres:5432/restaurant
       - POSTGRES_ASYNC_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/restaurant
@@ -22,6 +20,3 @@ services:
       - 8000:8000
     depends_on:
       - postgres
-
-volumes:
-  restaurant-postgres-data:

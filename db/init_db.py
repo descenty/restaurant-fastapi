@@ -5,7 +5,7 @@ from core.config import settings
 from models.base import BaseModel
 
 
-engine = create_async_engine(settings.postgres_uri, echo=True)
+engine = create_async_engine(settings.postgres_async_uri, echo=True)
 
 
 async def init_db():

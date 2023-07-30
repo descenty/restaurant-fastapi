@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from schemas.menu import MenuDTO
 from repository.menu import MenuRepository
+from uuid import UUID
 
 router = APIRouter()
 
@@ -31,8 +32,8 @@ async def update(menu: MenuDTO | None = Depends(MenuRepository.update)):
     return menu
 
 
-@router.delete("/{id}", response_model=MenuDTO)
-async def delete(menu: MenuDTO | None = Depends(MenuRepository.delete)):
-    if menu is None:
+@router.delete("/{id}")
+async def delete(deleted_id: UUID | None = Depends(MenuRepository.delete)):
+    if deleted_id is None:
         raise HTTPException(status_code=404, detail="menu not found")
-    return menu
+    return deleted_id

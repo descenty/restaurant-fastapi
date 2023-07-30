@@ -17,7 +17,7 @@ class DishRepository(CRUDRepository):
         session: AsyncSession = Depends(get_session),
     ) -> DishDTO | None:
         return (
-            [
+            next(
                 DishDTO.model_validate(dish, from_attributes=True)
                 for dish, in (
                     await session.execute(
@@ -29,7 +29,7 @@ class DishRepository(CRUDRepository):
                         .returning(Dish)
                     )
                 )
-            ]
+            )
             if (
                 await session.execute(
                     select(
@@ -39,8 +39,8 @@ class DishRepository(CRUDRepository):
                     )
                 )
             ).scalar()
-            else [None]
-        )[0]
+            else None
+        )
 
     @staticmethod
     async def read_all(
@@ -64,8 +64,8 @@ class DishRepository(CRUDRepository):
         id: UUID,
         session: AsyncSession = Depends(get_session),
     ) -> DishDTO | None:
-        return (
-            [
+        return next(
+            (
                 DishDTO.model_validate(dish, from_attributes=True)
                 for dish, in await session.execute(
                     select(Dish)
@@ -76,9 +76,9 @@ class DishRepository(CRUDRepository):
                         Dish.id == id,
                     )
                 )
-            ]
-            or [None]
-        )[0]
+            ),
+            None,
+        )
 
     @staticmethod
     async def update(
@@ -89,7 +89,7 @@ class DishRepository(CRUDRepository):
         session: AsyncSession = Depends(get_session),
     ) -> DishDTO | None:
         return (
-            [
+            next(
                 DishDTO.model_validate(dish, from_attributes=True)
                 for dish, in (
                     await session.execute(
@@ -99,7 +99,7 @@ class DishRepository(CRUDRepository):
                         .returning(Dish)
                     )
                 )
-            ]
+            )
             if (
                 await session.execute(
                     select(
@@ -110,8 +110,8 @@ class DishRepository(CRUDRepository):
                     )
                 )
             ).scalar()
-            else [None]
-        )[0]
+            else None
+        )
 
     @staticmethod
     async def delete(
@@ -119,16 +119,19 @@ class DishRepository(CRUDRepository):
         submenu_id: UUID,
         id: UUID,
         session: AsyncSession = Depends(get_session),
-    ) -> DishDTO | None:
+    ) -> UUID | None:
         return (
-            [
-                DishDTO.model_validate(dish, from_attributes=True)
-                for dish, in await session.execute(
-                    delete(Dish)
-                    .where(Dish.submenu_id == submenu_id, Dish.id == id)
-                    .returning(Dish)
-                )
-            ]
+            next(
+                (
+                    deleted_id
+                    for deleted_id, in await session.execute(
+                        delete(Dish)
+                        .where(Dish.submenu_id == submenu_id, Dish.id == id)
+                        .returning(Dish.id)
+                    )
+                ),
+                None,
+            )
             if (
                 await session.execute(
                     select(
@@ -139,5 +142,5 @@ class DishRepository(CRUDRepository):
                     )
                 )
             ).scalar()
-            else [None]
-        )[0]
+            else None
+        )

@@ -29,5 +29,5 @@ class CRUDRepository(ABC):
 
     @staticmethod
     @abstractmethod
-    def delete(id: UUID, session: DBSession) -> BaseModel | None:
+    def delete(id: UUID, session: DBSession) -> UUID | None:
         ...

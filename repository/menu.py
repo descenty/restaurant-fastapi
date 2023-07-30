@@ -13,18 +13,12 @@ class MenuRepository(CRUDRepository):
     async def create(
         menu_create: MenuCreate, session: AsyncSession = Depends(get_session)
     ) -> MenuDTO:
-        return (
-            [
-                MenuDTO.model_validate(menu, from_attributes=True)
-                for menu, in (
-                    await session.execute(
-                        insert(Menu)
-                        .values(menu_create.model_dump())
-                        .returning(Menu)
-                    )
-                )
-            ]
-        )[0]
+        return next(
+            MenuDTO.model_validate(menu, from_attributes=True)
+            for menu, in await session.execute(
+                insert(Menu).values(menu_create.model_dump()).returning(Menu)
+            )
+        )
 
     @staticmethod
     async def read_all(
@@ -54,8 +48,8 @@ class MenuRepository(CRUDRepository):
     async def read(
         id: UUID, session: AsyncSession = Depends(get_session)
     ) -> MenuDTO | None:
-        return (
-            [
+        return next(
+            (
                 MenuDTO.model_validate(
                     menu.__dict__
                     | {
@@ -74,9 +68,9 @@ class MenuRepository(CRUDRepository):
                     .where(Menu.id == id)
                     .group_by(Menu.id)
                 )
-            ]
-            or [None]
-        )[0]
+            ),
+            None,
+        )
 
     @staticmethod
     async def update(
@@ -84,8 +78,8 @@ class MenuRepository(CRUDRepository):
         menu_create: MenuCreate,
         session: AsyncSession = Depends(get_session),
     ) -> MenuDTO | None:
-        return (
-            [
+        return next(
+            (
                 MenuDTO.model_validate(
                     menu.__dict__
                     | {
@@ -93,56 +87,43 @@ class MenuRepository(CRUDRepository):
                         "dishes_count": dishes_count,
                     }
                 )
-                for menu, in (
+                for (menu,), (submenus_count, dishes_count, _) in zip(
                     await session.execute(
                         update(Menu)
                         .where(Menu.id == id)
                         .values(menu_create.model_dump())
                         .returning(Menu)
-                    )
+                    ),
+                    await session.execute(
+                        select(
+                            func.count(func.distinct(Submenu.id)),
+                            func.count(Dish.id),
+                            Menu.id,
+                        )
+                        .outerjoin(
+                            Submenu, onclause=Menu.id == Submenu.menu_id
+                        )
+                        .outerjoin(
+                            Dish, onclause=Submenu.id == Dish.submenu_id
+                        )
+                        .where(Menu.id == id)
+                        .group_by(Menu.id)
+                    ),
                 )
-                for submenus_count, dishes_count, _ in await session.execute(
-                    select(
-                        func.count(func.distinct(Submenu.id)),
-                        func.count(Dish.id),
-                        Menu.id,
-                    )
-                    .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
-                    .outerjoin(Dish, onclause=Submenu.id == Dish.submenu_id)
-                    .where(Menu.id == id)
-                    .group_by(Menu.id)
-                )
-            ]
-            or [None]
-        )[0]
+            ),
+            None,
+        )
 
     @staticmethod
     async def delete(
         id: UUID, session: AsyncSession = Depends(get_session)
-    ) -> MenuDTO | None:
-        return (
-            [
-                MenuDTO.model_validate(
-                    menu.__dict__
-                    | {
-                        "submenus_count": submenus_count,
-                        "dishes_count": dishes_count,
-                    }
+    ) -> UUID | None:
+        return next(
+            (
+                deleted_id
+                for deleted_id, in await session.execute(
+                    delete(Menu).where(Menu.id == id).returning(Menu.id)
                 )
-                for submenus_count, dishes_count, _ in await session.execute(
-                    select(
-                        func.count(func.distinct(Submenu.id)),
-                        func.count(Dish.id),
-                        Menu.id,
-                    )
-                    .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
-                    .outerjoin(Dish, onclause=Submenu.id == Dish.submenu_id)
-                    .where(Menu.id == id)
-                    .group_by(Menu.id)
-                )
-                for menu, in await session.execute(
-                    delete(Menu).where(Menu.id == id).returning(Menu)
-                )
-            ]
-            or [None]
-        )[0]
+            ),
+            None,
+        )

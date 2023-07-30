@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from schemas.submenu import SubmenuDTO
 from repository.submenu import SubmenuRepository
+from uuid import UUID
 
 router = APIRouter()
 
@@ -37,10 +38,10 @@ async def update(
     return submenu
 
 
-@router.delete("/{menu_id}/submenus/{id}", response_model=SubmenuDTO)
+@router.delete("/{menu_id}/submenus/{id}")
 async def delete(
-    submenu: SubmenuDTO | None = Depends(SubmenuRepository.delete),
+    deleted_id: UUID | None = Depends(SubmenuRepository.delete),
 ):
-    if submenu is None:
+    if deleted_id is None:
         raise HTTPException(status_code=404, detail="submenu not found")
-    return submenu
+    return deleted_id

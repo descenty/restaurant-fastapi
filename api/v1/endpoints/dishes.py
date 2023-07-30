@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from schemas.dish import DishDTO
 from repository.dish import DishRepository
+from uuid import UUID
 
 router = APIRouter()
 
@@ -43,10 +44,8 @@ async def update(dish: DishDTO | None = Depends(DishRepository.update)):
     return dish
 
 
-@router.delete(
-    "/{menu_id}/submenus/{submenu_id}/dishes/{id}", response_model=DishDTO
-)
-async def delete(dish: DishDTO | None = Depends(DishRepository.delete)):
-    if dish is None:
+@router.delete("/{menu_id}/submenus/{submenu_id}/dishes/{id}")
+async def delete(deleted_id: UUID | None = Depends(DishRepository.delete)):
+    if deleted_id is None:
         raise HTTPException(status_code=404, detail="dish not found")
-    return dish
+    return deleted_id
