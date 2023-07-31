@@ -7,17 +7,17 @@ readme = "README.md"
 packages = [{include = "restaurant_fastapi"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 fastapi = {extras = ["all"], version = "^0.100.1"}
 uvicorn = "^0.23.1"
 pydantic-settings = "^2.0.2"
 sqlalchemy = "^2.0.19"
-alembic = "^1.11.1"
 psycopg2-binary = "^2.9.6"
 asyncpg = "^0.28.0"
 anyio = "^3.7.1"
 trio = "^0.22.2"
 pytest = "^7.4.0"
+alembic = "^1.11.1"
 
 
 [tool.poetry.group.dev.dependencies]
