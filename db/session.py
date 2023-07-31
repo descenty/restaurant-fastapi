@@ -1,10 +1,12 @@
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+)
 from .init_db import engine
 from typing import AsyncGenerator, Annotated
 from fastapi import Depends
 
 
-# after route handler, session will be closed
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async_session = async_sessionmaker(engine, expire_on_commit=False)()
     try:

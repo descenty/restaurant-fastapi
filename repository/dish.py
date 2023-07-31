@@ -2,7 +2,7 @@ from fastapi import Depends
 from sqlalchemy import select, delete, insert, update, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from db.session import get_session
-from models import Menu, Submenu, Dish
+from models import Submenu, Dish
 from schemas.dish import DishDTO, DishCreate
 from uuid import UUID
 from repository.crud_repository import CRUDRepository
@@ -34,7 +34,8 @@ class DishRepository(CRUDRepository):
                 await session.execute(
                     select(
                         exists().where(
-                            Menu.id == menu_id, Submenu.id == submenu_id
+                            Submenu.menu_id == menu_id,
+                            Submenu.id == submenu_id,
                         )
                     )
                 )

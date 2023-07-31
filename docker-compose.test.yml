@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: restaurant-test-postgres
-    image: postgres:latest
+    image: postgres:15.1-alpine
     restart: always
     ports:
       - 5433:5432

@@ -1,3 +1,5 @@
-import sys
+from main import app
 
-sys.path = ["", ".."] + sys.path[1:]
+
+def teardown_module():
+    app.dependency_overrides = {}
