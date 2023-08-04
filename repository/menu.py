@@ -11,7 +11,8 @@ from repository.crud_repository import CRUDRepository
 class MenuRepository(CRUDRepository):
     @staticmethod
     async def create(
-        menu_create: MenuCreate, session: AsyncSession = Depends(get_session)
+        menu_create: MenuCreate,
+        session: AsyncSession = Depends(get_session),
     ) -> MenuDTO:
         return next(
             MenuDTO.model_validate(menu, from_attributes=True)
@@ -34,7 +35,7 @@ class MenuRepository(CRUDRepository):
             )
             for menu, submenus_count, dishes_count in await session.execute(
                 select(
-                    Menu,
+                    Menu,  # TODO use menu.id, menu.title, menu.description and then there is no need to use __dict__
                     func.count(func.distinct(Submenu.id)),
                     func.count(Dish.id),
                 )

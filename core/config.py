@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     postgres_async_uri: str = (
         "postgresql+asyncpg://postgres:qweasdzxc@localhost:5432/restaurant"
     )
+    redis_url: str = "redis://:qweasdzxc@localhost:6379"
     cors_allow_origins: List[str] = ["http://localhost"]
 
 
