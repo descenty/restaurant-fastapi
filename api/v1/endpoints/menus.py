@@ -8,13 +8,13 @@ router = APIRouter()
 
 
 @router.get("", response_model=list[MenuDTO])
-@cached("menus", ex=60)
+@cached("menus")
 async def get_all(service: MenuService = Depends(MenuService)):
     return await service.get_all()
 
 
 @router.get("/{id}", response_model=MenuDTO)
-@cached("menu-{id}", ex=60)
+@cached("menu-{id}")
 async def get(id: UUID, service: MenuService = Depends(MenuService)):
     if not (menu := await service.get(id)):
         raise HTTPException(status_code=404, detail="menu not found")

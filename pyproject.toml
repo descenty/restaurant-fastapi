@@ -19,6 +19,8 @@ trio = "^0.22.2"
 pytest = "^7.4.0"
 alembic = "^1.11.1"
 redis = "^4.6.0"
+grequests = "^0.7.0"
+aiohttp = "^3.8.5"
 
 
 [tool.poetry.group.dev.dependencies]
