@@ -1,4 +1,4 @@
 [flake8]
 max-line-length = 88
-exclude=db/migrations/*
+exclude = db/migrations/*
 extend-ignore = W503
