@@ -1,19 +1,33 @@
-from typing import List
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from pydantic_settings import BaseSettings
+
+class PostgresSettings(BaseModel):
+    host: str = 'localhost'
+    port: int = 5432
+    user: str = 'postgres'
+    password: str = 'postgres'
+    db: str = 'restaurant'
 
 
-class RedisSettings(BaseSettings):
-    url: str = "redis://:qweasdzxc@descenty.ru:6379"
-    default_ttl: int = 3600  # 1 hour
+class RedisSettings(BaseModel):
+    host: str = 'localhost'
+    port: int = 6379
+    password: str = ''
+    default_ttl: int = 3600
 
 
 class Settings(BaseSettings):
-    app_title: str = "restaurant-fastapi"
-    postgres_async_uri: str = (
-        "postgresql+asyncpg://postgres:qweasdzxc@localhost:5432/restaurant"
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_nested_delimiter='_',
+        env_file_encoding='utf-8',
+        case_sensitive=False,
+        extra='allow',
     )
-    cors_allow_origins: List[str] = ["http://localhost"]
+    app_title: str = 'restaurant-fastapi'
+    cors_allow_origins: list[str] = ['http://localhost']
+    postgres: PostgresSettings = PostgresSettings()
     redis: RedisSettings = RedisSettings()
 
 

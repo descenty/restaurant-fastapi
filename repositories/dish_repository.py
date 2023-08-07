@@ -1,20 +1,29 @@
-from fastapi import Depends
-from sqlalchemy import select, delete, insert, update, exists
-from sqlalchemy.ext.asyncio import AsyncSession
-from db.session import get_session
-from models import Submenu, Dish
-from schemas.dish import DishDTO, DishCreate
 from uuid import UUID
-from repository.crud_repository import CRUDRepository
+
+from sqlalchemy import delete, exists, insert, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from cache.redis import cached, invalidate
+from models import Dish, Submenu
+from schemas.dish import DishCreate, DishDTO
 
 
-class DishRepository(CRUDRepository):
-    @staticmethod
+class DishRepository:
+    @invalidate(
+        [
+            'menus',
+            'menus-{menu_id}',
+            'menus-{menu_id}-submenus',
+            'menus-{menu_id}-submenus-{submenu_id}',
+            'menus-{menu_id}-submenus-{submenu_id}-dishes',
+        ]
+    )
     async def create(
+        self,
         menu_id: UUID,
         submenu_id: UUID,
         dish_create: DishCreate,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> DishDTO | None:
         return (
             next(
@@ -22,10 +31,7 @@ class DishRepository(CRUDRepository):
                 for dish, in (
                     await session.execute(
                         insert(Dish)
-                        .values(
-                            dish_create.model_dump()
-                            | {"submenu_id": submenu_id}
-                        )
+                        .values(dish_create.model_dump() | {'submenu_id': submenu_id})
                         .returning(Dish)
                     )
                 )
@@ -43,11 +49,12 @@ class DishRepository(CRUDRepository):
             else None
         )
 
-    @staticmethod
+    @cached('menus-{menu_id}-submenus-{submenu_id}-dishes')
     async def read_all(
+        self,
         menu_id: UUID,
         submenu_id: UUID,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> list[DishDTO]:
         return [
             DishDTO.model_validate(dish, from_attributes=True)
@@ -58,12 +65,13 @@ class DishRepository(CRUDRepository):
             )
         ]
 
-    @staticmethod
+    @cached('menus-{menu_id}-submenus-{submenu_id}-dishes-{id}')
     async def read(
+        self,
         menu_id: UUID,
         submenu_id: UUID,
         id: UUID,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> DishDTO | None:
         return next(
             (
@@ -81,13 +89,23 @@ class DishRepository(CRUDRepository):
             None,
         )
 
-    @staticmethod
+    @invalidate(
+        [
+            'menus',
+            'menus-{menu_id}',
+            'menus-{menu_id}-submenus',
+            'menus-{menu_id}-submenus-{submenu_id}',
+            'menus-{menu_id}-submenus-{submenu_id}-dishes',
+            'menus-{menu_id}-submenus-{submenu_id}-dishes-{id}*',
+        ]
+    )
     async def update(
+        self,
         menu_id: UUID,
         submenu_id: UUID,
         id: UUID,
         dish_create: DishCreate,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> DishDTO | None:
         return (
             next(
@@ -114,12 +132,22 @@ class DishRepository(CRUDRepository):
             else None
         )
 
-    @staticmethod
+    @invalidate(
+        [
+            'menus',
+            'menus-{menu_id}',
+            'menus-{menu_id}-submenus',
+            'menus-{menu_id}-submenus-{submenu_id}',
+            'menus-{menu_id}-submenus-{submenu_id}-dishes',
+            'menus-{menu_id}-submenus-{submenu_id}-dishes-{id}*',
+        ]
+    )
     async def delete(
+        self,
         menu_id: UUID,
         submenu_id: UUID,
         id: UUID,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> UUID | None:
         return (
             next(

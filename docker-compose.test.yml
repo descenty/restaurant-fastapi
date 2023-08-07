@@ -1,7 +1,7 @@
 services:
   postgres:
-    container_name: restaurant-test-postgres
     image: postgres:15.1-alpine
+    container_name: test-postgres
     restart: always
     ports:
       - 5433:5432
@@ -9,14 +9,25 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=restaurant
+  redis:
+    image: redis:7
+    container_name: test-redis
+    ports:
+      - 6380:6379
+    command: >
+      --requirepass redis
   app:
-    container_name: restaurant-test-app
     build: .
+    container_name: test-app
     command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; ./test.sh"
-    environment:
-      - POSTGRES_URI=postgresql://postgres:postgres@postgres:5432/restaurant
-      - POSTGRES_ASYNC_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/restaurant
     ports:
       - 8000:8000
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=redis
     depends_on:
       - postgres
+      - redis

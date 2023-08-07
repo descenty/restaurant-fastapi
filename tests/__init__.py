@@ -1,3 +1,3 @@
 import sys
 
-sys.path = ["", ".."] + sys.path[1:]
+sys.path = ['', '..'] + sys.path[1:]

@@ -1,18 +1,19 @@
-from fastapi import Depends
-from sqlalchemy import select, func, delete, insert, update
-from sqlalchemy.ext.asyncio import AsyncSession
-from db.session import get_session
-from models import Menu, Submenu, Dish
-from schemas.menu import MenuDTO, MenuCreate
 from uuid import UUID
-from repository.crud_repository import CRUDRepository
+
+from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from cache.redis import cached, invalidate
+from models import Dish, Menu, Submenu
+from schemas.menu import MenuCreate, MenuDTO
 
 
-class MenuRepository(CRUDRepository):
-    @staticmethod
+class MenuRepository:
+    @invalidate('menus')
     async def create(
+        self,
         menu_create: MenuCreate,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> MenuDTO:
         return next(
             MenuDTO.model_validate(menu, from_attributes=True)
@@ -21,23 +22,22 @@ class MenuRepository(CRUDRepository):
             )
         )
 
-    @staticmethod
+    @cached('menus')
     async def read_all(
-        session: AsyncSession = Depends(get_session),
+        self,
+        session: AsyncSession,
     ) -> list[MenuDTO]:
         return [
-            MenuDTO.model_validate(
-                menu.__dict__
-                | {
-                    "submenus_count": submenus_count,
-                    "dishes_count": dishes_count,
-                },
-            )
-            for menu, submenus_count, dishes_count in await session.execute(
+            MenuDTO.model_validate(menu, from_attributes=True)
+            for menu in await session.execute(
                 select(
-                    Menu,  # TODO use menu.id, menu.title, menu.description and then there is no need to use __dict__
-                    func.count(func.distinct(Submenu.id)),
-                    func.count(Dish.id),
+                    Menu.id,
+                    Menu.title,
+                    Menu.description,
+                    func.count(func.distinct(Submenu.id)).label(
+                        'submenus_count'
+                    ),
+                    func.count(Dish.id).label('dishes_count'),
                 )
                 .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
                 .outerjoin(Dish, onclause=Submenu.id == Dish.submenu_id)
@@ -45,24 +45,20 @@ class MenuRepository(CRUDRepository):
             )
         ]
 
-    @staticmethod
-    async def read(
-        id: UUID, session: AsyncSession = Depends(get_session)
-    ) -> MenuDTO | None:
+    @cached('menus-{id}')
+    async def read(self, id: UUID, session: AsyncSession) -> MenuDTO | None:
         return next(
             (
-                MenuDTO.model_validate(
-                    menu.__dict__
-                    | {
-                        "submenus_count": submenus_count,
-                        "dishes_count": dishes_count,
-                    }
-                )
-                for menu, submenus_count, dishes_count in await session.execute(
+                MenuDTO.model_validate(menu, from_attributes=True)
+                for menu in await session.execute(
                     select(
-                        Menu,
-                        func.count(func.distinct(Submenu.id)),
-                        func.count(Dish.id),
+                        Menu.id,
+                        Menu.title,
+                        Menu.description,
+                        func.count(func.distinct(Submenu.id)).label(
+                            'submenus_count'
+                        ),
+                        func.count(Dish.id).label('dishes_count'),
                     )
                     .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
                     .outerjoin(Dish, onclause=Submenu.id == Dish.submenu_id)
@@ -73,19 +69,20 @@ class MenuRepository(CRUDRepository):
             None,
         )
 
-    @staticmethod
+    @invalidate(['menus', 'menus-{id}*'])
     async def update(
+        self,
         id: UUID,
         menu_create: MenuCreate,
-        session: AsyncSession = Depends(get_session),
+        session: AsyncSession,
     ) -> MenuDTO | None:
         return next(
             (
                 MenuDTO.model_validate(
                     menu.__dict__
                     | {
-                        "submenus_count": submenus_count,
-                        "dishes_count": dishes_count,
+                        'submenus_count': submenus_count,
+                        'dishes_count': dishes_count,
                     }
                 )
                 for (menu,), (submenus_count, dishes_count, _) in zip(
@@ -115,10 +112,8 @@ class MenuRepository(CRUDRepository):
             None,
         )
 
-    @staticmethod
-    async def delete(
-        id: UUID, session: AsyncSession = Depends(get_session)
-    ) -> UUID | None:
+    @invalidate(['menus', 'menus-{id}*'])
+    async def delete(self, id: UUID, session: AsyncSession) -> UUID | None:
         return next(
             (
                 deleted_id
