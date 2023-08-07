@@ -6,9 +6,8 @@ from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
+sys.path = ['.', '..'] + sys.path[1:]
 from models.base import BaseModel
-
-sys.path = ['', '..'] + sys.path[1:]
 
 load_dotenv()
 
@@ -31,6 +30,8 @@ postgres_url = ''.join(
         f'{getenv("POSTGRES_DB")}',
     ]
 )
+
+print(postgres_url)
 
 config.set_main_option('sqlalchemy.url', postgres_url)
 

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15.1-alpine
-    container_name: test-postgres
+    container_name: restaurant-test-postgres
     restart: always
     ports:
       - 5433:5432
@@ -11,14 +11,14 @@ services:
       - POSTGRES_DB=restaurant
   redis:
     image: redis:7
-    container_name: test-redis
+    container_name: restaurant-test-redis
     ports:
       - 6380:6379
     command: >
       --requirepass redis
   app:
     build: .
-    container_name: test-app
+    container_name: restaurant-test-app
     command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; ./test.sh"
     ports:
       - 8000:8000

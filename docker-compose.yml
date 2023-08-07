@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:15.1-alpine
-    container_name: postgres
+    container_name: restaurant-postgres
     restart: always
     ports:
       - 5432:5432
@@ -13,7 +13,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
   redis:
     image: redis:7
-    container_name: redis
+    container_name: restaurant-redis
     ports:
       - 6379:6379
     command: >
@@ -22,7 +22,7 @@ services:
       - redis-data:/data/_data
   app:
     build: .
-    container_name: app
+    container_name: restaurant-app
     command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; ./start.sh"
     ports:
       - 8000:8000
