@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from fastapi import BackgroundTasks
 from sqlalchemy import delete, exists, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,9 @@ from schemas.dish import DishCreate, DishDTO
 
 
 class DishRepository:
+    def __init__(self, background_tasks: BackgroundTasks):
+        self.background_tasks = background_tasks
+
     @invalidate(
         [
             'menus',

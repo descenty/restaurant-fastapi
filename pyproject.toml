@@ -25,10 +25,13 @@ redis = "^4.6.0"
 openpyxl = "^3.1.2"
 celery = "^5.3.1"
 gevent = "^23.7.0"
+nest-asyncio = "^1.5.7"
+eventlet = "^0.33.3"
 
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
+ipykernel = "^6.25.1"
 
 [build-system]
 requires = ["poetry-core"]

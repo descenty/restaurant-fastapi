@@ -1,11 +1,8 @@
 from decimal import Decimal
+from uuid import UUID
 
-# from uuid import UUID
-import openpyxl
-from openpyxl.worksheet.worksheet import Worksheet
-from pydantic import ValidationError, model_validator
+from pydantic import BaseModel, model_validator
 
-from core.config import settings
 from schemas.dish import DishCreate
 from schemas.menu import MenuCreate
 from schemas.submenu import SubmenuCreate
@@ -16,7 +13,13 @@ class DishCascadeCreate(DishCreate):
 
     @model_validator(mode='before')
     def validator(cls, row: tuple):
-        id, title, description, price, discount = row[0], row[1], row[2], row[3], row[4]
+        id, title, description, price, discount = (
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            (row[4] or 0.0),
+        )
         assert isinstance(id, int) and id > 0, 'id must be positive integer'
         assert len(title) > 0, 'title must be non-empty string'
         assert len(description) > 0, 'description must be non-empty string'
@@ -37,7 +40,7 @@ class DishCascadeCreate(DishCreate):
 
 class SubmenuCascadeCreate(SubmenuCreate):
     id: int
-    dishes: list[DishCreate] = []
+    dishes: list[DishCascadeCreate] = []
 
     @model_validator(mode='before')
     def validator(cls, row: tuple):
@@ -57,23 +60,18 @@ class MenuCascadeCreate(MenuCreate):
         return {'id': id, 'title': title, 'description': description}
 
 
-# id_map: dict[int, UUID] = {}
+class XLDishBinding(BaseModel):
+    xl_id: int
+    db_id: UUID
 
 
-def parse_menus():
-    wb = openpyxl.load_workbook(settings.menus_xl_path)
-    sheet: Worksheet = wb.active  # type: ignore
-    menus: list[MenuCascadeCreate] = []
-    try:
-        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row, values_only=True):
-            if row[0] is not None:
-                menus.append(MenuCascadeCreate.model_validate(row))
-            elif row[1] is not None:
-                menus[-1].submenus.append(SubmenuCascadeCreate.model_validate(row[1:]))
-            elif row[2] is not None:
-                menus[-1].submenus[-1].dishes.append(
-                    DishCascadeCreate.model_validate(row[2:])
-                )
-    except ValidationError as e:
-        print(e.errors()[0]['msg'])
-    return menus
+class XLSubmenuBinding(XLDishBinding):
+    dishes: list[XLDishBinding] = []
+
+
+class XLMenuBinding(XLDishBinding):
+    submenus: list[XLSubmenuBinding] = []
+
+
+class XLBindings(BaseModel):
+    menus: list[XLMenuBinding] = []

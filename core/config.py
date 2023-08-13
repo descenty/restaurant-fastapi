@@ -15,6 +15,7 @@ class RedisSettings(BaseModel):
     port: int = 6379
     password: str = ''
     default_ttl: int = 3600
+    enabled: bool = True
 
 
 class CelerySettings(BaseModel):

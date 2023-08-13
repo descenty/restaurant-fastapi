@@ -9,6 +9,7 @@ class DishDTO(BaseModel):
     title: str
     description: str
     price: Decimal
+    discount: Decimal
     submenu_id: UUID
 
 

@@ -5,14 +5,15 @@ from celery.signals import worker_ready
 from core.config import settings
 
 app = Celery(__name__, broker=settings.celery.broker, backend=settings.celery.backend)
+app.autodiscover_tasks(['background.tasks'])
 
 
 @app.on_after_configure.connect
-def setup_periodic_tasks(sender, **kwargs):
+def setup_periodic_tasks(sender: Celery, **kwargs):
     from background.tasks import update_menus
 
     sender.add_periodic_task(
-        crontab(minute='*/15'), update_menus.s(), name='update_menus'
+        crontab(minute='*/1'), update_menus.s(), name='update_menus'
     )
 
 

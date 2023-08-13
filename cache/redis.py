@@ -2,9 +2,10 @@ import asyncio
 import logging
 import pickle
 from functools import lru_cache, wraps
-from typing import Any
+from typing import Any, Callable
 
 import redis.asyncio as aioredis  # type: ignore[import]
+from fastapi import BackgroundTasks
 
 from core.config import settings
 
@@ -100,18 +101,23 @@ def redis_client():
 
 
 def cached(key: str, **cache_kwargs):
-    def decorator(func):
+    def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            rclient = redis_client()
             kwargs.update(zip(func.__code__.co_varnames, args))
-            if not rclient.is_available:
+            if (
+                not settings.redis.enabled
+                or not (rclient := redis_client()).is_available
+            ):
                 return await func(**kwargs)
             key_format = key.format(**kwargs)
             if data := await rclient.get(key_format):
                 return pickle.loads(data)
             result = await func(**kwargs)
-            await rclient.set(key_format, pickle.dumps(result), **cache_kwargs)
+            background_tasks: BackgroundTasks = args[0].background_tasks
+            background_tasks.add_task(
+                rclient.set, key_format, pickle.dumps(result), **cache_kwargs
+            )
             return result
 
         return wrapper
@@ -123,15 +129,20 @@ def invalidate(keys: list[str] | str, **cache_kwargs):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            rclient = redis_client()
             kwargs.update(zip(func.__code__.co_varnames, args))
             result = await func(**kwargs)
+            if (
+                not settings.redis.enabled
+                or not (rclient := redis_client()).is_available
+            ):
+                return result
             keys_format = (
                 [key.format(**kwargs) for key in keys]
                 if isinstance(keys, list)
                 else [keys.format(**kwargs)]
             )
-            await rclient.delete(keys_format, **cache_kwargs)
+            background_tasks: BackgroundTasks = args[0].background_tasks
+            background_tasks.add_task(rclient.delete, keys_format, **cache_kwargs)
             return result
 
         return wrapper

@@ -1,8 +1,9 @@
 from uuid import UUID
 
+from fastapi import BackgroundTasks
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import text
+from sqlalchemy.orm import selectinload
 
 from cache.redis import cached, invalidate
 from models import Dish, Menu, Submenu
@@ -10,6 +11,9 @@ from schemas.menu import MenuCascadeDTO, MenuCreate, MenuDTO
 
 
 class MenuRepository:
+    def __init__(self, background_tasks: BackgroundTasks):
+        self.background_tasks = background_tasks
+
     @invalidate(['menus', 'menus-cascade'])
     async def create(
         self,
@@ -46,53 +50,14 @@ class MenuRepository:
 
     @cached('menus-cascade')
     async def read_all_cascade(self, session: AsyncSession) -> list[MenuCascadeDTO]:
-        statement = text(
-            '''
-        SELECT json_agg(main_menu) AS result
-        FROM (
-            SELECT
-                m.id AS id,
-                m.title AS title,
-                m.description AS description,
-                COUNT(DISTINCT(sub.id)) AS submenus_count,
-                COALESCE(SUM(sub.dishes_count) :: bigint, 0) AS dishes_count,
-                json_agg(sub) AS submenus
-            FROM menu m
-            LEFT JOIN (
-                SELECT
-                    s.id AS id,
-                    s.title AS title,
-                    s.description AS description,
-                    s.menu_id,
-                    COUNT(d.id) AS dishes_count,
-                    json_agg(d) AS dishes
-                FROM submenu s
-                LEFT JOIN (
-                    SELECT
-                        d.id AS id,
-                        d.title AS title,
-                        d.description AS description,
-                        d.price * (1 + d.discount) AS price,
-                        d.submenu_id
-                    FROM dish d
-                ) d ON s.id = d.submenu_id
-                GROUP BY s.id, s.title, s.description, s.menu_id
-            ) sub ON m.id = sub.menu_id
-            GROUP BY m.id, m.title, m.description
-        ) main_menu;
-        '''
-        )
-
-        result = (await session.execute(statement)).scalars().first()
-
-        return (
-            [
-                MenuCascadeDTO.model_validate(menu, from_attributes=True)
-                for menu in result
-            ]
-            if result
-            else []
-        )
+        return [
+            MenuCascadeDTO.model_validate(menu, from_attributes=True)
+            for menu, in await session.execute(
+                select(Menu).options(
+                    selectinload(Menu.submenus).options(selectinload(Submenu.dishes))
+                )
+            )
+        ]
 
     @cached('menus-{id}')
     async def read(self, id: UUID, session: AsyncSession) -> MenuDTO | None:

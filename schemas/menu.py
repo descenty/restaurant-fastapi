@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, model_validator
 
 from schemas.submenu import SubmenuCascadeDTO
 
@@ -16,9 +16,15 @@ class MenuDTO(BaseModel):
 class MenuCascadeDTO(MenuDTO):
     submenus: list[SubmenuCascadeDTO] = []
 
-    @field_validator('submenus', mode='before')
-    def dishes_validator(cls, submenus: list[SubmenuCascadeDTO]):
-        return [submenu for submenu in submenus if submenu is not None]
+    @model_validator(mode='after')
+    def validator(self):
+        self.submenus_count = len(self.submenus)
+        for submenu in self.submenus:
+            submenu.dishes_count = len(submenu.dishes)
+            for dish in submenu.dishes:
+                self.dishes_count += 1
+                dish.price = dish.price * (1 + dish.discount)
+        return self
 
 
 class MenuCreate(BaseModel):

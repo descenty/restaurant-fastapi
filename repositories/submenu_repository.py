@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from fastapi import BackgroundTasks
 from sqlalchemy import delete, exists, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +10,9 @@ from schemas.submenu import SubmenuCreate, SubmenuDTO
 
 
 class SubmenuRepository:
+    def __init__(self, background_tasks: BackgroundTasks):
+        self.background_tasks = background_tasks
+
     @invalidate(
         ['menus', 'menus-cascade', 'menus-{menu_id}', 'menus-{menu_id}-submenus']
     )

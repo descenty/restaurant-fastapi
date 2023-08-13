@@ -1,0 +1,24 @@
+{
+  "menus": [
+    {
+      "xl_id": 1,
+      "db_id": "uuid",
+      "submenus": [
+        {
+          "xl_id": 1,
+          "db_id": "uuid",
+          "dishes": [
+            {
+              "xl_id": 1,
+              "db_id": "uuid"
+            },
+            {
+              "xl_id": 2,
+              "db_id": "uuid"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
