@@ -9,7 +9,9 @@ from schemas.submenu import SubmenuCreate, SubmenuDTO
 
 
 class SubmenuRepository:
-    @invalidate(['menus', 'menus-{menu_id}', 'menus-{menu_id}-submenus'])
+    @invalidate(
+        ['menus', 'menus-cascade', 'menus-{menu_id}', 'menus-{menu_id}-submenus']
+    )
     async def create(
         self,
         menu_id: UUID,
@@ -22,17 +24,13 @@ class SubmenuRepository:
                 for submenu, in (
                     await session.execute(
                         insert(Submenu)
-                        .values(
-                            submenu_create.model_dump() | {'menu_id': menu_id}
-                        )
+                        .values(submenu_create.model_dump() | {'menu_id': menu_id})
                         .returning(Submenu)
                     )
                 )
             )
             if (
-                await session.execute(
-                    select(exists().where(Menu.id == menu_id))
-                )
+                await session.execute(select(exists().where(Menu.id == menu_id)))
             ).scalar()
             else None
         )
@@ -88,6 +86,7 @@ class SubmenuRepository:
     @invalidate(
         [
             'menus',
+            'menus-cascade',
             'menus-{menu_id}',
             'menus-{menu_id}-submenus',
             'menus-{menu_id}-submenus-{id}*',
@@ -112,9 +111,7 @@ class SubmenuRepository:
                     await session.execute(
                         update(Submenu)
                         .where(Submenu.menu_id == menu_id, Submenu.id == id)
-                        .values(
-                            submenu_create.model_dump() | {'menu_id': menu_id}
-                        )
+                        .values(submenu_create.model_dump() | {'menu_id': menu_id})
                         .returning(Submenu)
                     ),
                     await session.execute(
@@ -122,9 +119,7 @@ class SubmenuRepository:
                             func.count(Dish.id),
                             Submenu.id,
                         )
-                        .outerjoin(
-                            Dish, onclause=Submenu.id == Dish.submenu_id
-                        )
+                        .outerjoin(Dish, onclause=Submenu.id == Dish.submenu_id)
                         .where(Submenu.id == id)
                         .group_by(Submenu.id)
                     ),
@@ -136,6 +131,7 @@ class SubmenuRepository:
     @invalidate(
         [
             'menus',
+            'menus-cascade',
             'menus-{menu_id}',
             'menus-{menu_id}-submenus',
             'menus-{menu_id}-submenus-{id}*',

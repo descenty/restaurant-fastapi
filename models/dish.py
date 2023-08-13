@@ -17,9 +17,8 @@ class Dish(BaseModel):
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(String(255), nullable=False)
     price: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False)
+    discount: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=True)
     submenu_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey('submenu.id', ondelete='CASCADE')
     )
-    submenu: Mapped['Submenu'] = relationship(
-        'Submenu', back_populates='dishes'
-    )
+    submenu: Mapped['Submenu'] = relationship('Submenu', back_populates='dishes')

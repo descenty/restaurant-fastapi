@@ -12,6 +12,7 @@ class DishRepository:
     @invalidate(
         [
             'menus',
+            'menus-cascade',
             'menus-{menu_id}',
             'menus-{menu_id}-submenus',
             'menus-{menu_id}-submenus-{submenu_id}',
@@ -57,11 +58,18 @@ class DishRepository:
         session: AsyncSession,
     ) -> list[DishDTO]:
         return [
-            DishDTO.model_validate(dish, from_attributes=True)
-            for dish, in await session.execute(
-                select(Dish)
-                .join(Submenu, onclause=Dish.submenu_id == Submenu.id)
-                .where(Submenu.menu_id == menu_id, Submenu.id == submenu_id)
+            DishDTO.model_validate(
+                dish.__dict__ | {'price': str(round(price, 2))}, from_attributes=True
+            )
+            for dish, price in (
+                await session.execute(
+                    select(
+                        Dish,
+                        Dish.price * (1 + Dish.discount),
+                    )
+                    .join(Submenu, onclause=Dish.submenu_id == Submenu.id)
+                    .where(Submenu.menu_id == menu_id, Submenu.id == submenu_id)
+                )
             )
         ]
 
@@ -75,9 +83,15 @@ class DishRepository:
     ) -> DishDTO | None:
         return next(
             (
-                DishDTO.model_validate(dish, from_attributes=True)
-                for dish, in await session.execute(
-                    select(Dish)
+                DishDTO.model_validate(
+                    dish.__dict__ | {'price': str(round(price, 2))},
+                    from_attributes=True,
+                )
+                for dish, price in await session.execute(
+                    select(
+                        Dish,
+                        Dish.price * (1 + Dish.discount),
+                    )
                     .join(Submenu, onclause=Dish.submenu_id == Submenu.id)
                     .where(
                         Submenu.menu_id == menu_id,
@@ -92,6 +106,7 @@ class DishRepository:
     @invalidate(
         [
             'menus',
+            'menus-cascade',
             'menus-{menu_id}',
             'menus-{menu_id}-submenus',
             'menus-{menu_id}-submenus-{submenu_id}',
@@ -109,13 +124,19 @@ class DishRepository:
     ) -> DishDTO | None:
         return (
             next(
-                DishDTO.model_validate(dish, from_attributes=True)
-                for dish, in (
+                DishDTO.model_validate(
+                    dish.__dict__ | {'price': str(round(price, 2))},
+                    from_attributes=True,
+                )
+                for dish, price in (
                     await session.execute(
                         update(Dish)
                         .where(Dish.submenu_id == submenu_id, Dish.id == id)
                         .values(dish_create.model_dump())
-                        .returning(Dish)
+                        .returning(
+                            Dish,
+                            Dish.price * (1 + Dish.discount),
+                        )
                     )
                 )
             )
@@ -135,6 +156,7 @@ class DishRepository:
     @invalidate(
         [
             'menus',
+            'menus-cascade',
             'menus-{menu_id}',
             'menus-{menu_id}-submenus',
             'menus-{menu_id}-submenus-{submenu_id}',

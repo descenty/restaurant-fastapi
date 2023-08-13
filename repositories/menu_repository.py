@@ -2,14 +2,15 @@ from uuid import UUID
 
 from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import text
 
 from cache.redis import cached, invalidate
 from models import Dish, Menu, Submenu
-from schemas.menu import MenuCreate, MenuDTO
+from schemas.menu import MenuCascadeDTO, MenuCreate, MenuDTO
 
 
 class MenuRepository:
-    @invalidate('menus')
+    @invalidate(['menus', 'menus-cascade'])
     async def create(
         self,
         menu_create: MenuCreate,
@@ -34,9 +35,7 @@ class MenuRepository:
                     Menu.id,
                     Menu.title,
                     Menu.description,
-                    func.count(func.distinct(Submenu.id)).label(
-                        'submenus_count'
-                    ),
+                    func.count(func.distinct(Submenu.id)).label('submenus_count'),
                     func.count(Dish.id).label('dishes_count'),
                 )
                 .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
@@ -44,6 +43,56 @@ class MenuRepository:
                 .group_by(Menu.id)
             )
         ]
+
+    @cached('menus-cascade')
+    async def read_all_cascade(self, session: AsyncSession) -> list[MenuCascadeDTO]:
+        statement = text(
+            '''
+        SELECT json_agg(main_menu) AS result
+        FROM (
+            SELECT
+                m.id AS id,
+                m.title AS title,
+                m.description AS description,
+                COUNT(DISTINCT(sub.id)) AS submenus_count,
+                COALESCE(SUM(sub.dishes_count) :: bigint, 0) AS dishes_count,
+                json_agg(sub) AS submenus
+            FROM menu m
+            LEFT JOIN (
+                SELECT
+                    s.id AS id,
+                    s.title AS title,
+                    s.description AS description,
+                    s.menu_id,
+                    COUNT(d.id) AS dishes_count,
+                    json_agg(d) AS dishes
+                FROM submenu s
+                LEFT JOIN (
+                    SELECT
+                        d.id AS id,
+                        d.title AS title,
+                        d.description AS description,
+                        d.price * (1 + d.discount) AS price,
+                        d.submenu_id
+                    FROM dish d
+                ) d ON s.id = d.submenu_id
+                GROUP BY s.id, s.title, s.description, s.menu_id
+            ) sub ON m.id = sub.menu_id
+            GROUP BY m.id, m.title, m.description
+        ) main_menu;
+        '''
+        )
+
+        result = (await session.execute(statement)).scalars().first()
+
+        return (
+            [
+                MenuCascadeDTO.model_validate(menu, from_attributes=True)
+                for menu in result
+            ]
+            if result
+            else []
+        )
 
     @cached('menus-{id}')
     async def read(self, id: UUID, session: AsyncSession) -> MenuDTO | None:
@@ -55,9 +104,7 @@ class MenuRepository:
                         Menu.id,
                         Menu.title,
                         Menu.description,
-                        func.count(func.distinct(Submenu.id)).label(
-                            'submenus_count'
-                        ),
+                        func.count(func.distinct(Submenu.id)).label('submenus_count'),
                         func.count(Dish.id).label('dishes_count'),
                     )
                     .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
@@ -69,7 +116,7 @@ class MenuRepository:
             None,
         )
 
-    @invalidate(['menus', 'menus-{id}*'])
+    @invalidate(['menus', 'menus-cascade', 'menus-{id}*'])
     async def update(
         self,
         id: UUID,
@@ -98,12 +145,8 @@ class MenuRepository:
                             func.count(Dish.id),
                             Menu.id,
                         )
-                        .outerjoin(
-                            Submenu, onclause=Menu.id == Submenu.menu_id
-                        )
-                        .outerjoin(
-                            Dish, onclause=Submenu.id == Dish.submenu_id
-                        )
+                        .outerjoin(Submenu, onclause=Menu.id == Submenu.menu_id)
+                        .outerjoin(Dish, onclause=Submenu.id == Dish.submenu_id)
                         .where(Menu.id == id)
                         .group_by(Menu.id)
                     ),
@@ -112,7 +155,7 @@ class MenuRepository:
             None,
         )
 
-    @invalidate(['menus', 'menus-{id}*'])
+    @invalidate(['menus', 'menus-cascade', 'menus-{id}*'])
     async def delete(self, id: UUID, session: AsyncSession) -> UUID | None:
         return next(
             (

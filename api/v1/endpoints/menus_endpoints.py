@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from schemas.menu import MenuCreate, MenuDTO
+from schemas.menu import MenuCascadeDTO, MenuCreate, MenuDTO
 from services.menu_service import MenuService, menu_service
 
 router = APIRouter()
@@ -11,6 +11,13 @@ router = APIRouter()
 @router.get('', response_model=list[MenuDTO], name='get_all_menus')
 async def get_all_menus(service: MenuService = Depends(menu_service)):
     return await service.get_all()
+
+
+@router.get(
+    '/cascade', response_model=list[MenuCascadeDTO], name='get_all_menus_cascade'
+)
+async def get_all_menus_cascade(service: MenuService = Depends(menu_service)):
+    return await service.get_all_cascade()
 
 
 @router.get('/{id}', response_model=MenuDTO, name='get_menu')

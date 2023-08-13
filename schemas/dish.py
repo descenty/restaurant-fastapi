@@ -16,3 +16,4 @@ class DishCreate(BaseModel):
     title: str
     description: str
     price: Decimal
+    discount: Decimal = Decimal(0)

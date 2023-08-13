@@ -5,7 +5,7 @@ from fastapi import Depends
 
 from db.session import get_session
 from repositories.menu_repository import MenuRepository
-from schemas.menu import MenuCreate, MenuDTO
+from schemas.menu import MenuCascadeDTO, MenuCreate, MenuDTO
 
 
 class MenuService:
@@ -15,6 +15,10 @@ class MenuService:
     async def get_all(self) -> list[MenuDTO]:
         async with await get_session() as session:
             return await self.repository.read_all(session)
+
+    async def get_all_cascade(self) -> list[MenuCascadeDTO]:
+        async with await get_session() as session:
+            return await self.repository.read_all_cascade(session)
 
     async def get(self, id: UUID) -> MenuDTO | None:
         async with await get_session() as session:
@@ -34,9 +38,9 @@ class MenuService:
 
     async def delete(self, id: UUID) -> UUID | None:
         async with await get_session() as session:
-            menu = await self.repository.delete(id, session)
+            deleted_id = await self.repository.delete(id, session)
             await session.commit()
-        return menu
+        return deleted_id
 
 
 @lru_cache

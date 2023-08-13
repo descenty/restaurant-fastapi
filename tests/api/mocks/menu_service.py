@@ -1,6 +1,6 @@
 import uuid
 
-from schemas.menu import MenuCreate, MenuDTO
+from schemas.menu import MenuCascadeDTO, MenuCreate, MenuDTO
 
 
 class MenuServiceMock:
@@ -11,6 +11,11 @@ class MenuServiceMock:
         self,
     ) -> list[MenuDTO]:
         return self.menus
+
+    async def get_all_cascade(
+        self,
+    ) -> list[MenuCascadeDTO]:
+        return [MenuCascadeDTO.model_validate(menu.model_dump()) for menu in self.menus]
 
     async def get(self, id: uuid.UUID) -> MenuDTO | None:
         return next((menu for menu in self.menus if menu.id == id), None)

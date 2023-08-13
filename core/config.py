@@ -17,6 +17,11 @@ class RedisSettings(BaseModel):
     default_ttl: int = 3600
 
 
+class CelerySettings(BaseModel):
+    broker: str = 'amqp://localhost:5672'
+    backend: str = 'redis://localhost:6379'
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file='.env',
@@ -29,6 +34,8 @@ class Settings(BaseSettings):
     cors_allow_origins: list[str] = ['http://localhost']
     postgres: PostgresSettings = PostgresSettings()
     redis: RedisSettings = RedisSettings()
+    celery: CelerySettings = CelerySettings()
+    menus_xl_path: str = 'admin/Menu.xlsx'
 
 
 settings = Settings()

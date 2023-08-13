@@ -25,7 +25,7 @@ def redis() -> aioredis.Redis:
 
 
 class RedisClient:
-    is_available: bool = False
+    is_available: bool | None = None
 
     def __init__(self):
         asyncio.create_task(self.check_redis())

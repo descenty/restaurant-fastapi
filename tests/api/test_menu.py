@@ -44,6 +44,12 @@ async def test_get_all(async_client: AsyncClient):
     assert isinstance(response.json(), list)
 
 
+async def test_get_all_cascade(async_client: AsyncClient):
+    response = await async_client.get(app.url_path_for('get_all_menus_cascade'))
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
 async def test_get_one(async_client: AsyncClient):
     response = await async_client.get(app.url_path_for('get_menu', id=menus[0].id))
     assert response.status_code == 200

@@ -38,9 +38,9 @@ class SubmenuService:
 
     async def delete(self, menu_id: UUID, id: UUID) -> UUID | None:
         async with await get_session() as session:
-            submenu = await self.repository.delete(menu_id, id, session)
+            deleted_id = await self.repository.delete(menu_id, id, session)
             await session.commit()
-        return submenu
+        return deleted_id
 
 
 @lru_cache

@@ -20,6 +20,15 @@ services:
       --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data/_data
+  rabbitmq:
+    image: rabbitmq:3.12.2-management
+    container_name: restaurant-rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
   app:
     build: .
     container_name: restaurant-app
@@ -35,6 +44,15 @@ services:
     depends_on:
       - postgres
       - redis
+  celery_worker:
+    build: .
+    container_name: restaurant-celery-worker
+    command: celery -A background.celery worker --loglevel=info
+    environment:
+      - CELERY_BROKER=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - CELERY_BACKEND=redis://${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      - rabbitmq
 volumes:
   postgres-data:
   redis-data:
