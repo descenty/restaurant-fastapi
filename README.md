@@ -20,11 +20,11 @@ docker compose -f .\docker-compose.test.yml up --build --abort-on-container-exit
 
 ### ДЗ №2
 
-##### **Реализовать вывод количества подменю и блюд для Меню через один (сложный) ORM запрос.**
+#### **Реализовать вывод количества подменю и блюд для Меню через один (сложный) ORM запрос.**
 
 - repositories.menu_repository
 
-##### Реализовать тестовый сценарий « **Проверка кол-ва блюд и подменю в меню** » из Postman с помощью pytest
+#### Реализовать тестовый сценарий « **Проверка кол-ва блюд и подменю в меню** » из Postman с помощью pytest
 
 - tests.integration.menu_crud
 - tests.integration.submenu_crud
@@ -33,6 +33,6 @@ docker compose -f .\docker-compose.test.yml up --build --abort-on-container-exit
 
 ### ДЗ №4
 
-##### Блюда по акции. Размер скидки (%) указывается в столбце G файла Menu.xlsx
+#### Блюда по акции. Размер скидки (%) указывается в столбце G файла Menu.xlsx
 
 Для блюда отображается цена со скидкой
