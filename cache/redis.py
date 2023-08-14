@@ -126,7 +126,7 @@ def cached(key: str, **cache_kwargs):
 
 
 def invalidate(keys: list[str] | str, **cache_kwargs):
-    def decorator(func):
+    def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             kwargs.update(zip(func.__code__.co_varnames, args))

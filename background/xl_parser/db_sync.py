@@ -1,6 +1,7 @@
 import logging
+from os import getenv
 
-from fastapi import BackgroundTasks
+from httpx import AsyncClient
 
 from background.xl_parser.schemas import (
     MenuCascadeCreate,
@@ -9,19 +10,14 @@ from background.xl_parser.schemas import (
     XLMenuBinding,
     XLSubmenuBinding,
 )
-from repositories.dish_repository import DishRepository
-from repositories.menu_repository import MenuRepository
-from repositories.submenu_repository import SubmenuRepository
-from schemas.dish import DishCreate
-from schemas.menu import MenuCreate
-from schemas.submenu import SubmenuCreate
-from services.dish_service import DishService
-from services.menu_service import MenuService
-from services.submenu_service import SubmenuService
+from schemas.dish import DishCreate, DishDTO
+from schemas.menu import MenuCreate, MenuDTO
+from schemas.submenu import SubmenuCreate, SubmenuDTO
 
 logging.basicConfig(level=logging.INFO)
 
 
+# TODO refactor this function, split it and avoid code duplication
 async def sync_menus(
     menus: list[MenuCascadeCreate],
     bindings_path: str = 'background/xl_parser/cache/bindings.json',
@@ -30,11 +26,11 @@ async def sync_menus(
         xl_bindings = XLBindings.model_validate_json(open(bindings_path).read())
     except Exception:
         xl_bindings = XLBindings()
-    menu_service = MenuService(MenuRepository(BackgroundTasks()))
-    submenu_service = SubmenuService(SubmenuRepository(BackgroundTasks()))
-    dish_service = DishService(DishRepository(BackgroundTasks()))
+    app_url = getenv('APP_URL')
+    base_api_url = f'{app_url}/api/v1/menus'
     for menu in menus:
-        logging.info(f'menu: {menu.id}')
+        menu_api_url = base_api_url
+        # logging.info(f'menu: {menu.id}')
         if menu_binding := next(
             (
                 menu_binding
@@ -43,18 +39,48 @@ async def sync_menus(
             ),
             None,
         ):
-            await menu_service.update(
-                menu_binding.db_id, MenuCreate(**menu.model_dump())
-            )
+            async with AsyncClient() as client:
+                if (
+                    await client.get(f'{menu_api_url}/{menu_binding.db_id}')
+                ).status_code == 404:
+                    created_menu = MenuDTO(
+                        **(
+                            await client.post(
+                                menu_api_url,
+                                json=MenuCreate(**menu.model_dump()).model_dump(
+                                    mode='json'
+                                ),
+                            )
+                        ).json()
+                    )
+                    menu_binding.db_id = created_menu.id
+                    menu_binding.submenus = []
+                else:
+                    await client.patch(
+                        f'{menu_api_url}/{menu_binding.db_id}',
+                        json=MenuCreate(**menu.model_dump()).model_dump(mode='json'),
+                    )
         else:
+            async with AsyncClient() as client:
+                created_menu = MenuDTO(
+                    **(
+                        await client.post(
+                            menu_api_url,
+                            json=MenuCreate(**menu.model_dump()).model_dump(
+                                mode='json'
+                            ),
+                        )
+                    ).json()
+                )
             menu_binding = XLMenuBinding(
                 xl_id=menu.id,
-                db_id=(await menu_service.create(MenuCreate(**menu.model_dump()))).id,
+                db_id=created_menu.id,
             )
             xl_bindings.menus.append(menu_binding)
 
+        submenu_api_url = f'{menu_api_url}/{menu_binding.db_id}/submenus'
         for submenu in menu.submenus:
-            logging.info(f'submenu: {submenu.id}')
+            # logging.info(f'submenu: {submenu.id}')
             if submenu_binding := next(
                 (
                     submenu_binding
@@ -63,17 +89,26 @@ async def sync_menus(
                 ),
                 None,
             ):
-                await submenu_service.update(
-                    menu_binding.db_id,
-                    submenu_binding.db_id,
-                    SubmenuCreate(**submenu.model_dump()),
-                )
-            else:
-                if (
-                    created_submenu := await submenu_service.create(
-                        menu_binding.db_id, SubmenuCreate(**submenu.model_dump())
+                async with AsyncClient() as client:
+                    await client.patch(
+                        f'{submenu_api_url}/{submenu_binding.db_id}',
+                        json=SubmenuCreate(**submenu.model_dump()).model_dump(
+                            mode='json'
+                        ),
                     )
-                ) is None:
+            else:
+                async with AsyncClient() as client:
+                    created_submenu = SubmenuDTO(
+                        **(
+                            await client.post(
+                                submenu_api_url,
+                                json=SubmenuCreate(**submenu.model_dump()).model_dump(
+                                    mode='json'
+                                ),
+                            )
+                        ).json()
+                    )
+                if created_submenu is None:
                     return
                 submenu_binding = XLSubmenuBinding(
                     xl_id=submenu.id,
@@ -81,8 +116,9 @@ async def sync_menus(
                 )
                 menu_binding.submenus.append(submenu_binding)
 
+            dish_api_url = f'{submenu_api_url}/{submenu_binding.db_id}/dishes'
             for dish in submenu.dishes:
-                logging.info(f'dish: {dish.id}')
+                # logging.info(f'dish: {dish.id}')
                 if dish_binding := next(
                     (
                         dish_binding
@@ -91,20 +127,27 @@ async def sync_menus(
                     ),
                     None,
                 ):
-                    await dish_service.update(
-                        menu_binding.db_id,
-                        submenu_binding.db_id,
-                        dish_binding.db_id,
-                        DishCreate(**dish.model_dump()),
-                    )
-                else:
-                    if (
-                        created_dish := await dish_service.create(
-                            menu_binding.db_id,
-                            submenu_binding.db_id,
-                            DishCreate(**dish.model_dump()),
+                    async with AsyncClient() as client:
+                        await client.patch(
+                            f'{dish_api_url}/{dish_binding.db_id}',
+                            json=DishCreate(**dish.model_dump()).model_dump(
+                                mode='json'
+                            ),
                         )
-                    ) is None:
+                else:
+                    async with AsyncClient() as client:
+                        created_dish = DishDTO(
+                            **(
+                                await client.post(
+                                    dish_api_url,
+                                    json=DishCreate(**dish.model_dump()).model_dump(
+                                        mode='json'
+                                    ),
+                                )
+                            ).json()
+                        )
+
+                    if created_dish is None:
                         return
                     dish_binding = XLDishBinding(
                         xl_id=dish.id,

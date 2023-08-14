@@ -62,15 +62,10 @@ class DishRepository:
         session: AsyncSession,
     ) -> list[DishDTO]:
         return [
-            DishDTO.model_validate(
-                dish.__dict__ | {'price': str(round(price, 2))}, from_attributes=True
-            )
-            for dish, price in (
+            DishDTO.model_validate(dish, from_attributes=True)
+            for dish, in (
                 await session.execute(
-                    select(
-                        Dish,
-                        Dish.price * (1 + Dish.discount),
-                    )
+                    select(Dish)
                     .join(Submenu, onclause=Dish.submenu_id == Submenu.id)
                     .where(Submenu.menu_id == menu_id, Submenu.id == submenu_id)
                 )
@@ -88,14 +83,11 @@ class DishRepository:
         return next(
             (
                 DishDTO.model_validate(
-                    dish.__dict__ | {'price': str(round(price, 2))},
+                    dish,
                     from_attributes=True,
                 )
-                for dish, price in await session.execute(
-                    select(
-                        Dish,
-                        Dish.price * (1 + Dish.discount),
-                    )
+                for dish, in await session.execute(
+                    select(Dish)
                     .join(Submenu, onclause=Dish.submenu_id == Submenu.id)
                     .where(
                         Submenu.menu_id == menu_id,
@@ -129,18 +121,15 @@ class DishRepository:
         return (
             next(
                 DishDTO.model_validate(
-                    dish.__dict__ | {'price': str(round(price, 2))},
+                    dish,
                     from_attributes=True,
                 )
-                for dish, price in (
+                for dish, in (
                     await session.execute(
                         update(Dish)
                         .where(Dish.submenu_id == submenu_id, Dish.id == id)
                         .values(dish_create.model_dump())
-                        .returning(
-                            Dish,
-                            Dish.price * (1 + Dish.discount),
-                        )
+                        .returning(Dish)
                     )
                 )
             )

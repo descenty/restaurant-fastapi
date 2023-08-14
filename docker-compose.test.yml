@@ -9,6 +9,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=restaurant
+      - TZ=Europe/Moscow
   redis:
     image: redis:7
     container_name: restaurant-test-redis
@@ -16,6 +17,8 @@ services:
       - 6380:6379
     command: >
       --requirepass redis
+    environment:
+      - TZ=Europe/Moscow
   app:
     build: .
     container_name: restaurant-test-app
@@ -28,6 +31,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6380
       - REDIS_PASSWORD=redis
+      - TZ=Europe/Moscow
     depends_on:
       - postgres
       - redis

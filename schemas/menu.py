@@ -1,3 +1,4 @@
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, model_validator
@@ -18,12 +19,16 @@ class MenuCascadeDTO(MenuDTO):
 
     @model_validator(mode='after')
     def validator(self):
-        self.submenus_count = len(self.submenus)
+        self.submenus_count = 0
+        self.dishes_count = 0
         for submenu in self.submenus:
-            submenu.dishes_count = len(submenu.dishes)
+            self.submenus_count += 1
             for dish in submenu.dishes:
                 self.dishes_count += 1
-                dish.price = dish.price * (1 + dish.discount)
+                submenu.dishes_count += 1
+                dish.actual_price = Decimal(
+                    round(max(0, dish.price * (1 - dish.discount)), 2)
+                )
         return self
 
 
