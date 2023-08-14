@@ -35,4 +35,4 @@ docker compose -f .\docker-compose.test.yml up --build --abort-on-container-exit
 
 #### Блюда по акции. Размер скидки (%) указывается в столбце G файла Menu.xlsx
 
-Для блюда отображается цена со скидкой
+- Для блюда отображается цена со скидкой
