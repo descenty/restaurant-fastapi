@@ -16,18 +16,23 @@ To test the project, run the following command:
 docker compose -f .\docker-compose.test.yml up --build --abort-on-container-exit
 ```
 
-**Сделанные задания со звездочкой*:**
+## Сделанные задания со звездочкой:
 
-ДЗ №2:
+### ДЗ №2
 
-- Реализовать вывод количества подменю и блюд для Меню через один (сложный) ORM запрос.
-  repositories.menu_repository.read_all
-- Реализовать тестовый сценарий « **Проверка кол-ва блюд и подменю в меню** » из Postman с помощью pytest
-  tests.integration.menu_crud
-  tests.integration.submenu_crud
-  tests.integration.dish_crud
-  tests.integration.computed_fields
+##### **Реализовать вывод количества подменю и блюд для Меню через один (сложный) ORM запрос.**
 
-ДЗ №4
+- repositories.menu_repository
 
-- Блюда по акции. Размер скидки (%) указывается в столбце G файла Menu.xlsx
+##### Реализовать тестовый сценарий « **Проверка кол-ва блюд и подменю в меню** » из Postman с помощью pytest
+
+- tests.integration.menu_crud
+- tests.integration.submenu_crud
+- tests.integration.dish_crud
+- tests.integration.computed_fields
+
+### ДЗ №4
+
+##### Блюда по акции. Размер скидки (%) указывается в столбце G файла Menu.xlsx
+
+Для блюда отображается цена со скидкой
