@@ -1,5 +1,5 @@
 services:
-  postgres: # TODO add healthcheck
+  postgres:
     image: postgres:15.1-alpine
     container_name: restaurant-postgres
     restart: always
@@ -12,7 +12,7 @@ services:
       - TZ=Europe/Moscow
     volumes:
       - postgres-data:/var/lib/postgresql/data
-  redis: # TODO add healthcheck
+  redis:
     image: redis:7
     container_name: restaurant-redis
     command: >
@@ -23,7 +23,7 @@ services:
       - TZ=Europe/Moscow
     volumes:
       - redis-data:/data/_data
-  rabbitmq: # TODO add healthcheck
+  rabbitmq:
     image: rabbitmq:3.12.2-management
     container_name: restaurant-rabbitmq
     ports:
