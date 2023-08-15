@@ -56,7 +56,7 @@ def get_binding(
     return next((binding for binding in bindings if binding.xl_id == xl_id), None)
 
 
-async def update_or_create_entity(
+async def create_or_update_entity(
     api_url: str,
     bindings: list[XLBinding] | list[XLMenuBinding] | list[XLSubmenuBinding],
     model: IDModel,
@@ -91,7 +91,7 @@ async def sync_menus(
         logging.info(f'menu: {menu.id}')
         menu_binding = cast(
             XLMenuBinding,
-            await update_or_create_entity(
+            await create_or_update_entity(
                 base_api_url,
                 menus_bindings.menus,
                 menu,
@@ -104,7 +104,7 @@ async def sync_menus(
             logging.info(f'submenu: {submenu.id}')
             submenu_binding = cast(
                 XLSubmenuBinding,
-                await update_or_create_entity(
+                await create_or_update_entity(
                     submenu_api_url,
                     menu_binding.submenus,
                     submenu,
@@ -115,7 +115,7 @@ async def sync_menus(
             dish_api_url = f'{submenu_api_url}/{submenu_binding.db_id}/dishes'
             for dish in submenu.dishes:
                 logging.info(f'dish: {dish.id}')
-                await update_or_create_entity(
+                await create_or_update_entity(
                     dish_api_url,
                     submenu_binding.dishes,
                     dish,

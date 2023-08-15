@@ -32,14 +32,19 @@ class DishRepository:
     ) -> DishDTO | None:
         return (
             next(
-                DishDTO.model_validate(dish, from_attributes=True)
-                for dish, in (
-                    await session.execute(
-                        insert(Dish)
-                        .values(dish_create.model_dump() | {'submenu_id': submenu_id})
-                        .returning(Dish)
+                (
+                    DishDTO.model_validate(dish, from_attributes=True)
+                    for dish, in (
+                        await session.execute(
+                            insert(Dish)
+                            .values(
+                                dish_create.model_dump() | {'submenu_id': submenu_id}
+                            )
+                            .returning(Dish)
+                        )
                     )
-                )
+                ),
+                None,
             )
             if (
                 await session.execute(
@@ -120,18 +125,21 @@ class DishRepository:
     ) -> DishDTO | None:
         return (
             next(
-                DishDTO.model_validate(
-                    dish,
-                    from_attributes=True,
-                )
-                for dish, in (
-                    await session.execute(
-                        update(Dish)
-                        .where(Dish.submenu_id == submenu_id, Dish.id == id)
-                        .values(dish_create.model_dump())
-                        .returning(Dish)
+                (
+                    DishDTO.model_validate(
+                        dish,
+                        from_attributes=True,
                     )
-                )
+                    for dish, in (
+                        await session.execute(
+                            update(Dish)
+                            .where(Dish.submenu_id == submenu_id, Dish.id == id)
+                            .values(dish_create.model_dump())
+                            .returning(Dish)
+                        )
+                    )
+                ),
+                None,
             )
             if (
                 await session.execute(

@@ -24,14 +24,17 @@ class SubmenuRepository:
     ) -> SubmenuDTO | None:
         return (
             next(
-                SubmenuDTO.model_validate(submenu, from_attributes=True)
-                for submenu, in (
-                    await session.execute(
-                        insert(Submenu)
-                        .values(submenu_create.model_dump() | {'menu_id': menu_id})
-                        .returning(Submenu)
+                (
+                    SubmenuDTO.model_validate(submenu, from_attributes=True)
+                    for submenu, in (
+                        await session.execute(
+                            insert(Submenu)
+                            .values(submenu_create.model_dump() | {'menu_id': menu_id})
+                            .returning(Submenu)
+                        )
                     )
-                )
+                ),
+                None,
             )
             if (
                 await session.execute(select(exists().where(Menu.id == menu_id)))
