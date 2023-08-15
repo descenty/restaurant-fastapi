@@ -8,9 +8,11 @@ from schemas.menu import MenuCreate
 from schemas.submenu import SubmenuCreate
 
 
-class DishCascadeCreate(DishCreate):
+class IDModel(BaseModel):
     id: int
 
+
+class DishCascadeCreate(IDModel, DishCreate):
     @model_validator(mode='before')
     def validator(cls, row: tuple):
         id, title, description, price, discount = (
@@ -38,8 +40,7 @@ class DishCascadeCreate(DishCreate):
         }
 
 
-class SubmenuCascadeCreate(SubmenuCreate):
-    id: int
+class SubmenuCascadeCreate(IDModel, SubmenuCreate):
     dishes: list[DishCascadeCreate] = []
 
     @model_validator(mode='before')
@@ -47,12 +48,13 @@ class SubmenuCascadeCreate(SubmenuCreate):
         return MenuCascadeCreate.model_validate(row).model_dump()
 
 
-class MenuCascadeCreate(MenuCreate):
-    id: int
+class MenuCascadeCreate(IDModel, MenuCreate):
     submenus: list[SubmenuCascadeCreate] = []
 
     @model_validator(mode='before')
-    def validator(cls, v: tuple):
+    def validator(cls, v: tuple | dict):
+        if isinstance(v, dict):
+            return v
         id, title, description = v[0], v[1], v[2]
         assert isinstance(id, int) and id > 0, 'id must be positive integer'
         assert len(title) > 0, 'title must be non-empty string'
@@ -60,18 +62,18 @@ class MenuCascadeCreate(MenuCreate):
         return {'id': id, 'title': title, 'description': description}
 
 
-class XLDishBinding(BaseModel):
+class XLBinding(BaseModel):
     xl_id: int
     db_id: UUID
 
 
-class XLSubmenuBinding(XLDishBinding):
-    dishes: list[XLDishBinding] = []
+class XLSubmenuBinding(XLBinding):
+    dishes: list[XLBinding] = []
 
 
-class XLMenuBinding(XLDishBinding):
+class XLMenuBinding(XLBinding):
     submenus: list[XLSubmenuBinding] = []
 
 
-class XLBindings(BaseModel):
+class XLMenusBindings(BaseModel):
     menus: list[XLMenuBinding] = []

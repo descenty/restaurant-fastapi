@@ -18,20 +18,19 @@ pytest = "^7.4.0"
 alembic = "^1.11.1"
 aiohttp = "^3.8.5"
 pre-commit = "^3.3.3"
-types-pyopenssl = "^23.2.0.2"
 fastapi = "^0.101.0"
 httpx = "^0.24.1"
 redis = "^4.6.0"
 openpyxl = "^3.1.2"
 celery = "^5.3.1"
-gevent = "^23.7.0"
-nest-asyncio = "^1.5.7"
-eventlet = "^0.33.3"
+aiofiles = "^23.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
 ipykernel = "^6.25.1"
+types-pyopenssl = "^23.2.0.2"
+types-aiofiles = "^23.1.0.5"
 
 [build-system]
 requires = ["poetry-core"]

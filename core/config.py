@@ -31,6 +31,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra='allow',
     )
+    app_url: str = 'http://localhost:8000'
     app_title: str = 'restaurant-fastapi'
     cors_allow_origins: list[str] = ['http://localhost']
     postgres: PostgresSettings = PostgresSettings()

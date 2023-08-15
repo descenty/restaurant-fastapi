@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 
 background/cache/
+ipynb/
