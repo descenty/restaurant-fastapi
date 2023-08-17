@@ -7,8 +7,10 @@ from httpx import AsyncClient, Response
 from pydantic import BaseModel
 
 from background.xl_parser.schemas import (
+    DishCascadeCreate,
     IDModel,
     MenuCascadeCreate,
+    SubmenuCascadeCreate,
     XLBinding,
     XLMenuBinding,
     XLMenusBindings,
@@ -77,6 +79,21 @@ async def create_or_update_entity(
     return binding
 
 
+async def sync_removed(
+    api_url: str,
+    bindings: list[XLBinding] | list[XLMenuBinding] | list[XLSubmenuBinding],
+    models: list[MenuCascadeCreate]
+    | list[SubmenuCascadeCreate]
+    | list[DishCascadeCreate],
+):
+    bindings = cast(list[XLBinding], bindings)
+    for binding in bindings:
+        if not next((model for model in models if model.id == binding.xl_id), None):
+            async with AsyncClient() as client:
+                await client.delete(f'{api_url}/{binding.db_id}')
+            bindings.remove(binding)
+
+
 async def sync_menus(
     menus: list[MenuCascadeCreate],
     bindings_path: str = 'background/xl_parser/cache/bindings.json',
@@ -87,6 +104,11 @@ async def sync_menus(
     except Exception:
         menus_bindings = XLMenusBindings()
     base_api_url = f'{settings.app_url}/api/v1/menus'
+    await sync_removed(
+        base_api_url,
+        menus_bindings.menus,
+        menus,
+    )
     for menu in menus:
         logging.info(f'menu: {menu.id}')
         menu_binding = cast(
@@ -100,6 +122,11 @@ async def sync_menus(
             ),
         )
         submenu_api_url = f'{base_api_url}/{menu_binding.db_id}/submenus'
+        await sync_removed(
+            base_api_url,
+            menu_binding.submenus,
+            menu.submenus,
+        )
         for submenu in menu.submenus:
             logging.info(f'submenu: {submenu.id}')
             submenu_binding = cast(
@@ -112,6 +139,11 @@ async def sync_menus(
                     XLSubmenuBinding,
                 ),
             )
+            await sync_removed(
+                base_api_url,
+                submenu_binding.dishes,
+                submenu.dishes,
+            )
             dish_api_url = f'{submenu_api_url}/{submenu_binding.db_id}/dishes'
             for dish in submenu.dishes:
                 logging.info(f'dish: {dish.id}')
@@ -122,5 +154,6 @@ async def sync_menus(
                     DishCreate,
                     XLBinding,
                 )
+
     async with aiofiles.open(bindings_path, 'w') as f:
         await f.write(menus_bindings.model_dump_json())
