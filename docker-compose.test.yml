@@ -22,7 +22,7 @@ services:
   app:
     build: .
     container_name: restaurant-test-app
-    command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; chmod +x ./test.sh; ./test.sh"
+    command: bash -c "while !</dev/tcp/postgres/5432; do sleep 1; done; alembic upgrade head; pytest"
     ports:
       - 8000:8000
     environment:
